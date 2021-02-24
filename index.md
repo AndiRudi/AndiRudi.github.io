@@ -1,5 +1,5 @@
 ---
 layout: post
-title: Welcome to my blog
+title: Blogging Like a Hacker
 ---
 Hello World
