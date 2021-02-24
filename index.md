@@ -1,5 +1,6 @@
 ---
 layout: post
-title: Welcome to my blog
+title: Welcome
 ---
-Hello World
+
+# Welcome
