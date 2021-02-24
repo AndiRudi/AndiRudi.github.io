@@ -1,5 +1,5 @@
 ---
 layout: post
-title: AndiRudi
+title: Welcome to my blog
 ---
 # Hello World
