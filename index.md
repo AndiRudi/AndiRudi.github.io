@@ -1,5 +1,7 @@
+---
 layout: post
 title: "Title"
+---
 # Welcome
 
 <ul>
