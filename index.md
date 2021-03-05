@@ -1,5 +1,6 @@
 ---
-title: "Title"
+layout: default
+title: Home
 ---
 # Welcome
 
