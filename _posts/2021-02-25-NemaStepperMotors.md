@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "NEMA 8 vs. NEMA 11 Comparison"
-author: john
+author: Andreas Rudischhauser
 categories: [ IoT, Stepper ]
 image: ../assets/2021-02-25-NemaStepperMotors/header.jpg
 description: "Nema Stepper Motor with Arduino and A4988 Driver"
@@ -11,17 +11,17 @@ description: "Nema Stepper Motor with Arduino and A4988 Driver"
 
 For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project. This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
 
-To drive a NEMA stepper, you need:
+**To drive a NEMA stepper, you need:**
 
-- Stepper Motor
+- NEMA Stepper 8 or NEMA 11 Stepper Motor
 - Arduino Nano (or any other)
 - A A4988 driver board
 - Development board
-- Cables 
+- Cables
 - USB Cable
 - A 3D Printed hinch
 
-## Winch
+## Winch (3D Printed)
 
 I decided to quickly spin up Tinkercad and draw an winch. Tinkercad is quite easy to use and I recommend it for beginners. It has everything needed to make lots of projects and it's free.
 
@@ -29,9 +29,7 @@ I designed the winch for both motors. You can download them from Thingiverse:
 
 Thingiverse Hinches for Nema 8 and 11
 
-## Schema
-
-This is how the things need to be connected
+## Schematic View
 
 ![Schematic View](../assets/2021-02-25-NemaStepperMotors/schema.svg)
 
@@ -91,12 +89,11 @@ First mount the winch onto the motor. You may need some filing and pushing to ge
 This is how it looks like in my setup
 
 
-And here you can see a little video of the final result:
-
 ## Results
 
+Here you can see a little video of my test setup. It does not look professional but it does the job for me.
 
-
+With this setup I figured that the NEMA 8 was able to pull around 200 gramms, wheras the NEMA was ablet to hold up to 700 grams.
 
 ## FAQ
 
@@ -114,20 +111,27 @@ This is a very cheap stepper motor. Beacause of that ot is used a lot in IoT pro
 
 ### What is NEMA?
 
-NEMA (National Electrical Manufacturers Association) is a group that has standardized the motors (and their torque)
+NEMA (National Electrical Manufacturers Association) is a group that has standardized the motors (and their torque). They still come in different length so, so watch out:
 
-* NEMA 08, 20 mm × 20 mm, 0,036 Nm
+- NEMA 08, 20 mm × 20 mm, 0,036 Nm
+- NEMA 11, 28 mm × 28 mm, 0,1 Nm
+- NEMA 14, 35 mm × 35 mm, 0,3 Nm
+- NEMA 17, 42 mm × 42 mm, 0,5 Nm
+- NEMA 23, 56 mm × 56 mm, 2,0 – 4,0 Nm
+- NEMA 34, 86 mm × 86 mm, 4,5 – 8,0 Nm
 
-That means around 200 gramms
+## Please support me
 
-* NEMA 11, 28 mm × 28 mm, 0,1 Nm
+If you want to help me writing more blog posts please use the affiliate links above to buy stuff. You can also donate a litte amount using the link below or (or scan the QR Code). 
 
-You can really feel the difference both in weight (around 100 gramms) and torque compared to the NEMA 8 or 28BYJ-48.
-That means around 400 gramms (but also it weighs around 100 gramms)
+Thanks a million times!
 
-* NEMA 14, 35 mm × 35 mm, 0,3 Nm
-* NEMA 17, 42 mm × 42 mm, 0,5 Nm
-* NEMA 23, 56 mm × 56 mm, 2,0 – 4,0 Nm
-* NEMA 34, 86 mm × 86 mm, 4,5 – 8,0 Nm
+<form action="https://www.paypal.com/donate" method="post" target="_top">
+<input type="hidden" name="hosted_button_id" value="RT2TB3FZGGFMQ" />
+<input type="image" src="https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+<img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
+</form>
 
+QR Code:
 
+![Donation](../assets/Donation.png)
