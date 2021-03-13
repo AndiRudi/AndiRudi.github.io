@@ -32,19 +32,19 @@ For the NEMA 11 I had some issues with the overhang so I created a special versi
 
 You can download the winch from Thingiverse: [Winch for Nema 11](https://www.thingiverse.com/thing:4792611/files)
 
-![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch1Small.jpg)
-![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch2Small.jpg)
-![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch3Small.jpg)
+![Winch](/assets/2021-02-25-NemaStepperMotors/Nema11Winch1Small.jpg)
+![Winch](/assets/2021-02-25-NemaStepperMotors/Nema11Winch2Small.jpg)
+![Winch](/assets/2021-02-25-NemaStepperMotors/Nema11Winch3Small.jpg)
 
 ## Schematic View
 
-![Schematic View](../assets/2021-02-25-NemaStepperMotors/schema.svg)
+![Schematic View](/assets/2021-02-25-NemaStepperMotors/schema.svg)
 
 ## Bread Board
 
 This is how to set things up on a bread board.
 
-![BreadBoard](../assets/2021-02-25-NemaStepperMotors/breadboard.png)
+![BreadBoard](/assets/2021-02-25-NemaStepperMotors/breadboard.png)
 
 ## The Arduino Code
 
@@ -101,13 +101,13 @@ Once uploaded, connect the main power source to the motor and it should immediat
 
 This is how it looks like in my setup
 
-![Winch Animation](../assets/2021-02-25-NemaStepperMotors/Setup.jpg)
+![Winch Animation](/assets/2021-02-25-NemaStepperMotors/Setup.jpg)
 
 ## Results
 
 Here you can see a little video of my test setup. It does not look professional but it does the job for me.
 
-![Winch Animation](../assets/2021-02-25-NemaStepperMotors/WinchAnimation.gif)
+![Winch Animation](/assets/2021-02-25-NemaStepperMotors/WinchAnimation.gif)
 
 With this setup I figured that the NEMA 8 was able to pull around 200 gramms, wheras the NEMA was ablet to hold up to 700 grams.
 
@@ -148,4 +148,4 @@ Thanks a million times!
 
 QR Code:
 
-![Donation](../assets/Donation.png)
+![Donation](/assets/Donation.png)
