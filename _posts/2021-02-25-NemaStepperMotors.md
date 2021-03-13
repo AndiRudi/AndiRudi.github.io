@@ -9,25 +9,32 @@ description: "Nema Stepper Motor with Arduino and A4988 Driver"
 
 # Nema Stepper Motor with Arduino and A4988 Driver
 
-For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project. This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
+For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project.
+
+This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
 
 **To drive a NEMA stepper, you need:**
 
-- NEMA Stepper 8 or NEMA 11 Stepper Motor
-- Arduino Nano (or any other)
-- A A4988 driver board
-- Development board
-- Cables
-- USB Cable
-- A 3D Printed hinch
+- [NEMA 8](https://amzn.to/3rWgJpy) and or [NEMA 11](https://amzn.to/3csokFZ) Stepper Motor
+- [Arduino Nano with USB Cable](https://amzn.to/2OkORxa)
+- [A4988 driver board](https://amzn.to/38B3nYn)
+- [Breakout board](https://amzn.to/3ldfuzP)
+- [Jumper cables](https://amzn.to/3ckzJre)
+- [Nylon Rope](https://amzn.to/38C5Gu9)
+- [Laboratory Power Supply](https://amzn.to/3tgF5dY) or [6V Battery Case](https://amzn.to/30DG1ga)
+- A 3D Printer (If you want to print a winch)
 
 ## Winch (3D Printed)
 
-I decided to quickly spin up Tinkercad and draw an winch. Tinkercad is quite easy to use and I recommend it for beginners. It has everything needed to make lots of projects and it's free.
+To test the torque I needed a Winch and I decided to use [Tinkercad](https://www.tinkercad.com/) to draw some. Tinkercad is quite easy to use and I recommend it for beginners. It has everything needed to make lots of projects and it's free.
 
-I designed the winch for both motors. You can download them from Thingiverse:
+For the NEMA 11 I had some issues with the overhang so I created a special version which can be printed in two pieces and then glued together.
 
-Thingiverse Hinches for Nema 8 and 11
+You can download the winch from Thingiverse: [Winch for Nema 11](https://www.thingiverse.com/thing:4792611/files)
+
+![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch1Small.jpg)
+![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch2Small.jpg)
+![Winch](../assets/2021-02-25-NemaStepperMotors/Nema11Winch3Small.jpg)
 
 ## Schematic View
 
@@ -39,9 +46,9 @@ This is how to set things up on a bread board.
 
 ![BreadBoard](../assets/2021-02-25-NemaStepperMotors/breadboard.png)
 
-## Code
+## The Arduino Code
 
-This is a pretty simple version of the code to run the motors in both directions. Just copy this to your Arduino IDE, select the correct Arduino board and upload it. Be careful, the motors will start right after upload.
+This is a pretty simple version of the code which run the motors in both directions. Just copy this to your Arduino IDE, select the correct Arduino board and upload it. Be careful, the motors will start right after upload.
 
 ```c
 int stepCounter;
@@ -84,14 +91,23 @@ void loop()
 
 ## Assembly
 
-First mount the winch onto the motor. You may need some filing and pushing to get it onto the shaft. Then get your breadboard and some cables and put everything together like in the breadboard. Last but not least plug the USB cable into the Arduino and upload the code. Once uploaded, connect the main power source to the motor and it should immediately start spinning. If not head over to the FAQ below.
+First mount the winch on to the motor. You may need some filing and pushing to get it onto the shaft.
+
+Then get your breadboard and some cables and put everything together like in the breadboard picture above.
+
+Then connect your Arduino with your computer and upload the code.
+
+Once uploaded, connect the main power source to the motor and it should immediately start spinning. If not head over to the FAQ below.
 
 This is how it looks like in my setup
 
+![Winch Animation](../assets/2021-02-25-NemaStepperMotors/Setup.jpg)
 
 ## Results
 
 Here you can see a little video of my test setup. It does not look professional but it does the job for me.
+
+![Winch Animation](../assets/2021-02-25-NemaStepperMotors/WinchAnimation.gif)
 
 With this setup I figured that the NEMA 8 was able to pull around 200 gramms, wheras the NEMA was ablet to hold up to 700 grams.
 
@@ -99,13 +115,11 @@ With this setup I figured that the NEMA 8 was able to pull around 200 gramms, wh
 
 ### The stepper motor is just making sounds, but is not moving
 
-In my experiments this happenes when the motor does not have enough power (voltage). I first tried to use a converter which creates 5V out off the USB port, but this was not enough current to power the motor. So please use an external power supply to drive the motor or some extra batteries.
-
-I am using a laboratory power supply because it can give different current and has additional usb power. [Click here to see an recommendation](https://amzn.to/3kSzGa1)
+In my experiments this happenes when the motor does not have enough power (voltage). I first tried to use a converter which creates 5V out off the USB port, but this was not enough current to power the motor. So please use an external power supply or battery pack to drive the motor.
 
 ### What is 28BYJ-48?
 
-This is a very cheap stepper motor. Beacause of that ot is used a lot in IoT projects. The downside of the motor is, that it does not have a lot of torque
+This is a very cheap stepper motor (see [here](https://amzn.to/3bENSk1)). Beacause of its low price it is used a lot in IoT projects. The downside of the motor is, that it does not have a lot of torque
 
 28BYJ-48 35 mm x 30 mm, 0,034 Nm -> That means around 200 gramms
 
