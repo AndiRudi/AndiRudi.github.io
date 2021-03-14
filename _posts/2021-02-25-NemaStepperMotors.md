@@ -3,12 +3,12 @@ layout: post
 title:  "NEMA 8 vs. NEMA 11 Comparison"
 author: Andreas Rudischhauser
 categories: [ IoT, Stepper ]
-image: ../assets/2021-02-25-NemaStepperMotors/header.jpg
+image: /assets/2021-02-25-NemaStepperMotors/header.jpg
 description: "Nema Stepper Motor with Arduino and A4988 Driver"
 ---
 
 # Nema Stepper Motor with Arduino and A4988 Driver
-
+{}
 For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project.
 
 This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
@@ -64,7 +64,7 @@ void setup()
 
 void loop()
 {
-   digitalWrite(4,HIGH); // counterwise
+   digitalWrite(4,HIGH); // clockwise
    for(stepCounter = 0; stepCounter < steps; stepCounter++)
    {
       digitalWrite(5,HIGH);
@@ -109,19 +109,19 @@ Here you can see a little video of my test setup. It does not look professional 
 
 ![Winch Animation](/assets/2021-02-25-NemaStepperMotors/WinchAnimation.gif)
 
-With this setup I figured that the NEMA 8 was able to pull around 200 gramms, wheras the NEMA was ablet to hold up to 700 grams.
+With this setup I figured that the NEMA 8 was able to pull around 200 grams, whereas the NEMA was able to hold up to 700 grams.
 
 ## FAQ
 
 ### The stepper motor is just making sounds, but is not moving
 
-In my experiments this happenes when the motor does not have enough power (voltage). I first tried to use a converter which creates 5V out off the USB port, but this was not enough current to power the motor. So please use an external power supply or battery pack to drive the motor.
+In my experiments this happens when the motor does not have enough power (voltage). I first tried to use a converter which creates 5V out off the USB port, but this was not enough current to power the motor. So please use an external power supply or battery pack to drive the motor.
 
 ### What is 28BYJ-48?
 
-This is a very cheap stepper motor (see [here](https://amzn.to/3bENSk1)). Beacause of its low price it is used a lot in IoT projects. The downside of the motor is, that it does not have a lot of torque
+This is a very cheap stepper motor (see [here](https://amzn.to/3bENSk1)). Because of its low price it is used a lot in IoT projects. The downside of the motor is, that it does not have a lot of torque
 
-28BYJ-48 35 mm x 30 mm, 0,034 Nm -> That means around 200 gramms
+28BYJ-48 35 mm x 30 mm, 0,034 Nm -> That means around 200 grams
 
 ### What is NEMA?
 
@@ -136,7 +136,7 @@ NEMA (National Electrical Manufacturers Association) is a group that has standar
 
 ## Please support me
 
-If you want to help me writing more blog posts please use the affiliate links above to buy stuff. You can also donate a litte amount using the link below or (or scan the QR Code). 
+If you want to help me writing more blog posts please use the affiliate links above to buy stuff. You can also donate a little amount using the link below or (or scan the QR Code).
 
 Thanks a million times!
 
