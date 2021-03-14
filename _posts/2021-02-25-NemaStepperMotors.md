@@ -8,7 +8,7 @@ description: "Nema Stepper Motor with Arduino and A4988 Driver"
 ---
 
 # Nema Stepper Motor with Arduino and A4988 Driver
-{}
+
 For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project.
 
 This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
