@@ -9,11 +9,13 @@ description: "Important, but not urgent. The Eisenhower Matrix for Software Deve
 
 # Important, but not urgent! The Eisenhower Matrix for Software Development!
 
-I don't exactly know when I first heard about the Eisenhower Matrix but since then I've found it more and more useful to structure my (work) life. It really helps to prioritize what to do next if you have a lot of tasks.
+I don't remember exactly when I first heard about the Eisenhower Matrix but since then I've found it more and more useful to structure my (work) life. It really helps to prioritize what to do next if you have a lot of tasks.
 
-## The Eisenhower Matrix (for Time Management)
+Over the last couple years I have made my own version of the matrix, dedicated for to software development in SAAS applications. But first let me show you the original matrix.
 
-Let's have a look at the original Eisenhower Matrix for Time Management.
+## The Eisenhower Matrix (Original)
+
+The original Eisenhower Matrix helps you to sort and prioritize tasks and is a method in Time Management. Let's see how it looks:
 
 ![Eisenhower Matrix](/assets/2021-03-26-EisenhowerMatrix/Eisenhower.drawio.svg)
 
@@ -21,18 +23,18 @@ Let's have a look at the original Eisenhower Matrix for Time Management.
 
 As you can see, the matrix explains, that you should do the IMPORTANT AND URGENT things immediately and personally, then you work on the IMPORTANT BUT NOT URGENT ones and the others are more or less NOT IMPORTANT.
 
+The matrix is a really good tool and I encourage you to use it. Now let's see at the special version for Software Developers.
+
 ## The Eisenhower Matrix (for Software Development)
 
-The above matrix can easily be adapted to software development.
+The original matrix can be adapted to software development and SAAS applications like this:
 
 ![Eisenhower Matrix](/assets/2021-03-26-EisenhowerMatrix/EisenhowerSoftware.drawio.svg)
 
-Now the question is, is it really good to always do the IMPORTANT AND URGENT things? Do you always want to work in the RED Zone?
+Now the question it: Is it really good to always do the IMPORTANT AND URGENT things because the matrix says so? Do you really always want to work in the RED Zone?
 
-Although the matrix explains how you should set your priorities in a given set of tasks, this does not mean, that you should follow the Matrix blindly.
+Although the matrix advices you how to set your priorities this does not mean, that you should follow the Matrix blindly.
 
-Of course it is not a good idea to always live in the URGENT/IMPORTANT quadrant,because it is the area where the Stress Level is very high. A high stress level cannot be maintained for a long period ... and Software Development is one of those Infinite Games where the Players need to delivery straight and steady.
+Of course it is NOT a good idea to always work in the URGENT/IMPORTANT quadrant. You can imagine, that always living in the DANGER-Zone leads to high stress levels and high stress levels cannot be maintained for a long period. Now here comes the thing. Software Development is a "Infinite Game" where the Players need to delivery straight and steady instead of a quick win.
 
-So even if you have to go for IMPORTANT/URGENT issues first, you want to work on a plan to get out of that quadrant and stay in the IMPORTANT but NOT URGENT zone.
-
-
+So even if you have to go for IMPORTANT/URGENT issues first (Bugs etc.), you want to have a plan to stay out that quadrant and work in the IMPORTANT but NOT URGENT zone. You want to have time to think things through, plan them accordingly and executed them correctly. No rushing things.
