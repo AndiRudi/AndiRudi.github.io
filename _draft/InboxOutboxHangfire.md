@@ -83,7 +83,7 @@ This ensures, that whenever the customer is saved, we also save a message TO BE 
 Unless you need very high speeds and can live with lost information, you should not use Redis as storage for inbox and outbox messages. If Redis is failing and the Data is flushed you will lose all your information. Make sure that you always have your inbox/outbox stored to disk.
 
 ## Do process messages in order (but maybe parallelize)
-
+https://medium.com/incognia-tech/ensuring-data-consistency-across-services-with-the-transactional-outbox-pattern-90be4d735cb0
 
 
 ## Links and Resources
