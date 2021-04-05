@@ -1,0 +1,29 @@
+I".<p>I once needed to decrypt a php encoded string and it turned out to be more complex than anticipated. This is just a gist.</p>
+
+<h2 id="php-encryptions">PHP Encryptions</h2>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="c1">//It seems ctr is not supported in .net so we need to use cbc</span>
+   <span class="n">encryptedText</span> <span class="o">=</span> <span class="nb">openssl_encrypt</span><span class="p">(</span><span class="n">theOriginalText</span><span class="p">,</span> <span class="s1">'aes-128-cbc'</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">substr</span><span class="p">(</span><span class="n">iv</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">16</span><span class="p">));</span>
+</code></pre></div></div>
+
+<h3 id="net-core-decryption">.NET Core Decryption</h3>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">using</span> <span class="nn">Aes</span> <span class="n">aes</span> <span class="p">=</span> <span class="n">Aes</span><span class="p">.</span><span class="nf">Create</span><span class="p">();</span>
+
+    <span class="kt">var</span> <span class="n">key</span> <span class="p">=</span> <span class="n">System</span><span class="p">.</span><span class="n">Text</span><span class="p">.</span><span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">.</span><span class="nf">GetBytes</span><span class="p">(</span><span class="n">originalKey</span><span class="p">.</span><span class="nf">Substring</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">16</span><span class="p">));</span>
+    <span class="kt">var</span> <span class="n">iv</span> <span class="p">=</span> <span class="n">System</span><span class="p">.</span><span class="n">Text</span><span class="p">.</span><span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">.</span><span class="nf">GetBytes</span><span class="p">(</span><span class="n">originalIV</span><span class="p">.</span><span class="nf">Substring</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">16</span><span class="p">));</span>
+    <span class="kt">var</span> <span class="n">encryptedBytes</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="nf">FromBase64String</span><span class="p">(</span><span class="n">encryptedText</span><span class="p">);</span> 
+    <span class="kt">var</span> <span class="n">decryptor</span> <span class="p">=</span> <span class="n">aes</span><span class="p">.</span><span class="nf">CreateDecryptor</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">);</span>
+    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="s">""</span><span class="p">;</span>
+    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">memoryStream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MemoryStream</span><span class="p">(</span><span class="n">encryptedBytes</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoStream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">CryptoStream</span><span class="p">(</span><span class="n">memoryStream</span><span class="p">,</span> <span class="n">decryptor</span><span class="p">,</span> <span class="n">CryptoStreamMode</span><span class="p">.</span><span class="n">Read</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">reader</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">StreamReader</span><span class="p">(</span><span class="n">cryptoStream</span><span class="p">))</span>
+            <span class="p">{</span>
+                <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">reader</span><span class="p">.</span><span class="nf">ReadToEnd</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</code></pre></div></div>
+:ET

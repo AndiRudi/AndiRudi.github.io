@@ -8,7 +8,7 @@ author_url : /author/andi
 author_avatar: andi
 show_avatar : true
 read_time : 2
-feature_image: feature-water
+feature_image: feature-wolf
 show_related_posts: true
 square_related: recommend-spain
 ---
