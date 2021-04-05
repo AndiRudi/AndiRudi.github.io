@@ -7,7 +7,7 @@ author_name : Andi
 author_url : /author/andi
 author_avatar: andi
 show_avatar : true
-read_time : 22
+read_time : 12
 feature_image: feature-water
 show_related_posts: true
 square_related: recommend-spain
