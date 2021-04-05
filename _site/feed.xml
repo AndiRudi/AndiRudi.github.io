@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Writer Theme</title>
+    <description>focussed on typography, minimal design and
+ quality photography built using the Jekyll platform.
+</description>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Mon, 05 Apr 2021 13:36:24 +0200</pubDate>
+    <lastBuildDate>Mon, 05 Apr 2021 13:36:24 +0200</lastBuildDate>
+    <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>The Inbox and Outbox Patterns</title>
+        <description>&lt;p&gt;The Inbox and Outbox Patterns are a good way to make sure data flows reliably between services. Let’s have a deep look how it works.&lt;/p&gt;
+
+&lt;p&gt;To get started have a look at this simple scenario without any inbox and outbox patterns applied:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/Without.drawio.svg&quot; alt=&quot;Without Inbox&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The above scenario is using a direct (or synchronous) connection to the other service. If we want to use messages the scenario would look a bit different:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/WithQueue.drawio.svg&quot; alt=&quot;With Queue&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;But also this example can be broken down to the synchronous pattern above because the first call to the RabbitMQ is still synchronous.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/WithQueue2.drawio.svg&quot; alt=&quot;With Queue 2&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The following snippet is a typical example of this scenario. We first save a customer in the local system and then we send a message to another system.&lt;/p&gt;
+
+&lt;p&gt;In the end this means, whatever we do, there will be a synchronous call from our service to another system. Now let’s have a look how we would send data to this system.&lt;/p&gt;
+
+&lt;p&gt;In the following example, we are saving a customer in our service and then we want to send it to another system (using RabbitMQ). That means, after saving the local customer, we would send it like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;AddCustomer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Customer&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Customers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SaveChanges&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;//At this point the record is saved to the local system and now&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;//we want to send the record to other systems using the rabbit mq&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;RabbitMQ&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ToMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Can you see the issue with this code?&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Let’s think for a moment that RabbitMQ cannot receive the message (network issue, to much data, etc.). With the current code, the record would be saved to the local services database, but sending it to queue will fail and there is no way the lost information can be recovered. Therefore we will have different information on the local system and all other systems.&lt;/p&gt;
+
+&lt;p&gt;This is where the Outbox Pattern can help.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-outbox-pattern-how-does-it-work&quot;&gt;The Outbox Pattern: How does it work?&lt;/h2&gt;
+
+&lt;p&gt;The idea of this pattern is, that in your local service you have a outbox queue to handle outgoing data. Think of it like a email application with outboxes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/Outbox.drawio.svg&quot; alt=&quot;Outbox&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;There are different ways how you can model the outbox pattern. Whatever pattern you choose, you need to make sure, that both actions (saving locally and adding to the outbox) are handled in one transaction. One pattern is to use hangfire (a background processing library) to deal with this. That means with saving your your local record, you also put a task to send it to another system to Hangfire, which will deal with that later.&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;AddCustomer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Customer&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;transaction&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;TransactionScope&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Customers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+        &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;outboxMessage&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ToMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutboxMessages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outboxMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SaveChanges&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+        
+        &lt;span class=&quot;n&quot;&gt;Hangfire&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BackgroundJob&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Enqueue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Outbox&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;o&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;o&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Process&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outboxMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+        &lt;span class=&quot;n&quot;&gt;transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Complete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Outbox&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cs&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Process&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Guid&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;messageId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutboxMessages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Find&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;messageId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RabbitMQ&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DateTime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Now&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SaveChanges&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;But what if the messages in the Outbox are not sent?&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;This is exactly the reason we have this box. If the other service is not available, the outbox will store all outgoing messages until the error is resolved.&lt;/p&gt;
+
+&lt;p&gt;The trick is, that we have separated the problems. As a developer you will have some time to fix the issue, while your local service is still working. If you won’t have the outbox, then your local service would be erroring as well.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-inbox-pattern-how-does-it-work&quot;&gt;The Inbox Pattern: How does it work?&lt;/h2&gt;
+
+&lt;p&gt;The Inbox Pattern is similar to the Outbox Pattern. The first step is to get the message from the external system and store it. The second step is to loop through the inbox (in order) and process the messages.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/Inbox.drawio.svg&quot; alt=&quot;Inbox&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Here is some pseudo code how this could look like using Hangfire as an Inbox.&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;QueueReceiver&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Data&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;transaction&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;TransactionScope&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;inboxMessage&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Inbox&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InboxMessages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;inboxMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SaveChanges&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+       
+        &lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Ack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Complete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Inbox&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cs&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Guid&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;messageId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;inboxMessages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Find&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;messageId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Type&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Customer&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;//Here we do something with the received data&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Customers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;customer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;FromMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SaveChanges&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+   
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In this case we make sure, that when we receive the message from the queue, we save it to the local database, add a task to process it and acknowledge the message to the queue in one transaction transaction.&lt;/p&gt;
+
+&lt;p&gt;The second step is then to process the received data later.&lt;/p&gt;
+
+&lt;h2 id=&quot;full-picture&quot;&gt;Full picture&lt;/h2&gt;
+
+&lt;p&gt;If your service receives data from other services and also sends data to other services, you will probably have an inbox and an outbox. Just to finish this article here the full picture how this looks like.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-04-05-InboxOutboxPattern/Fullpicture.drawio.svg&quot; alt=&quot;Inbox&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;complete-example&quot;&gt;Complete Example&lt;/h2&gt;
+
+&lt;p&gt;While writing this article I realized, that I want to have a fully working example. So I wrote a &lt;a href=&quot;https://github.com/AndiRudi/InboxOutboxPattern&quot;&gt;console application&lt;/a&gt; to support the article. I didn’t want to use RabbitMQ so I wrote a fake MessageQueue and using Hangfire was also quite tricky so it is not really used, but simulated.&lt;/p&gt;
+
+&lt;h2 id=&quot;known-issues&quot;&gt;Known issues&lt;/h2&gt;
+
+&lt;h3 id=&quot;do-not-use-in-memory-store-as-inboxoutbox&quot;&gt;Do not use In-Memory Store as Inbox/Outbox&lt;/h3&gt;
+
+&lt;p&gt;An in memory store like Redis used as a backing store can be problematic. You usually don’t want to loose the outbox under all circumstances. But if you use Redis and some is flushing the cache you will. So make sure that you always have your inbox/outbox stored to disk.&lt;/p&gt;
+
+&lt;h3 id=&quot;process-the-inboxoutbox-in-order&quot;&gt;Process the inbox/outbox in order&lt;/h3&gt;
+
+&lt;p&gt;For Inbox: Make sure that you process items in the order they came in (FIFO), otherwise you may mixing up and overwriting data. If the incoming message has a unique key attached use it make sure your not processing it twice. If there is a timestamp use that to order the messages.&lt;/p&gt;
+
+&lt;p&gt;For Outbox: Always add a timestamp and unique key to your messages to ensure the receiver can also check for order and duplicates easily.&lt;/p&gt;
+
+&lt;h3 id=&quot;be-careful-about-multiple-workers&quot;&gt;Be careful about multiple workers&lt;/h3&gt;
+
+&lt;p&gt;If you use background workers like Hangfire to process your outbox, you may want to parallelize the work to speed up the process. Although you can do this, you still need to ensure the order. You may introduce a AggregateId or PartitionId to make sure, that even when you have multiple workers, each worker only always works on a (by AggregateId or PartitionId) - ordered list of all messages.&lt;/p&gt;
+
+&lt;p&gt;https://medium.com/incognia-tech/ensuring-data-consistency-across-services-with-the-transactional-outbox-pattern-90be4d735cb0&lt;/p&gt;
+
+&lt;h2 id=&quot;faq&quot;&gt;FAQ&lt;/h2&gt;
+
+&lt;h3 id=&quot;is-there-another-possible-option-instead-of-a-recurring-task-polling-for-changes&quot;&gt;Is there another possible option instead of a recurring task polling for changes?&lt;/h3&gt;
+
+&lt;p&gt;Multiple databases have triggers than can be used to start a worker once new data is incoming.&lt;/p&gt;
+
+&lt;h3 id=&quot;what-about-distributed-transactions&quot;&gt;What about Distributed Transactions?&lt;/h3&gt;
+
+&lt;p&gt;Distributed transactions are another way how to ensure transactional safety between two systems. It is usually more complicated. There have been many systems (and there still are) that make use of distributed transactions (see &lt;a href=&quot;https://en.wikipedia.org/wiki/Two-phase_commit_protocol&quot;&gt;Two Phase Commit Protocol&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;The Inbox/Outbox Pattern is an alternative and easier way. Instead of taking care of the whole transaction over all systems, the pattern only uses transactions inside each service to do internal work and then put the message into the outbox. The status of the whole process has to be part of the message itself. Each system retrieves the message and continues with it’s work and eventually creates new messages delivered to other systems.&lt;/p&gt;
+
+&lt;h2 id=&quot;links-and-resources&quot;&gt;Links and Resources&lt;/h2&gt;
+
+&lt;p&gt;https://event-driven.io/en/outbox_inbox_patterns_and_delivery_guarantees_explained/&lt;/p&gt;
+
+&lt;p&gt;https://github.com/oskardudycz/PostgresOutboxPatternWithCDC.NET
+https://github.com/oskardudycz/EventSourcing.NetCore#104-event-processing
+http://www.kamilgrzybek.com/design/the-outbox-pattern/&lt;/p&gt;
+
+&lt;p&gt;Inbox &amp;amp; Outbox pattern - transactional message processing [Microservices .NET]
+https://www.youtube.com/watch?v=ebyR5RPKciw&lt;/p&gt;
+
+&lt;p&gt;Reliably Save State &amp;amp; Publish Events (Outbox Pattern)
+https://www.youtube.com/watch?v=u8fOnxAxKHk&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 05 Apr 2021 00:00:00 +0200</pubDate>
+        <link>http://localhost:4000/InboxOutboxPattern</link>
+        <guid isPermaLink="true">http://localhost:4000/InboxOutboxPattern</guid>
+        
+        
+        <category>coding</category>
+        
+        <category>patterns</category>
+        
+      </item>
+    
+      <item>
+        <title>Decrypt PHP encrypted strings with .net core</title>
+        <description>&lt;p&gt;I once needed to decrypt a php encoded string and it turned out to be more complex than anticipated. This is just a gist.&lt;/p&gt;
+
+&lt;h2 id=&quot;php-encryptions&quot;&gt;PHP Encryptions&lt;/h2&gt;
+
+&lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;   &lt;span class=&quot;c1&quot;&gt;//It seems ctr is not supported in .net so we need to use cbc&lt;/span&gt;
+   &lt;span class=&quot;nx&quot;&gt;encryptedText&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;openssl_encrypt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;theOriginalText&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'aes-128-cbc'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;substr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;iv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;net-core-decryption&quot;&gt;.NET Core Decryption&lt;/h3&gt;
+
+&lt;div class=&quot;language-cs highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Aes&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;aes&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Aes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Create&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Encoding&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UTF8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;GetBytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;originalKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Substring&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;iv&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Encoding&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UTF8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;GetBytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;originalIV&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Substring&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;encryptedBytes&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Convert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;FromBase64String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encryptedText&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; 
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;decryptor&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;aes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;CreateDecryptor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;iv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;decryptedText&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;memoryStream&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;MemoryStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encryptedBytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cryptoStream&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;CryptoStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;memoryStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;decryptor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CryptoStreamMode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Read&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;reader&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;StreamReader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cryptoStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;decryptedText&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;reader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ReadToEnd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Wed, 31 Mar 2021 00:00:00 +0200</pubDate>
+        <link>http://localhost:4000/DecodePHPEncodedStringWithNET</link>
+        <guid isPermaLink="true">http://localhost:4000/DecodePHPEncodedStringWithNET</guid>
+        
+        
+        <category>coding</category>
+        
+      </item>
+    
+      <item>
+        <title>Important, but not urgent. The Eisenhower Matrix for Software Development!</title>
+        <description>&lt;p&gt;I don’t remember exactly when I first heard about the Eisenhower Matrix but since then I’ve found it more and more useful to structure my (work) life. It really helps to prioritize what to do next if you have a lot of tasks.&lt;/p&gt;
+
+&lt;p&gt;Over the last couple years I have made my own version of the matrix, dedicated for to software development in SAAS applications. But first let me show you the original matrix.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-eisenhower-matrix-original&quot;&gt;The Eisenhower Matrix (Original)&lt;/h2&gt;
+
+&lt;p&gt;The original Eisenhower Matrix helps you to sort and prioritize tasks and is a method in Time Management. Let’s see how it looks:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-03-26-EisenhowerMatrix/Eisenhower.drawio.svg&quot; alt=&quot;Eisenhower Matrix&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Dwight D. Eisenhower: I have two kinds of problems, the urgent and the important. The urgent are not important, and the important are never urgent&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;As you can see, the matrix explains, that you should do the IMPORTANT AND URGENT things immediately and personally, then you work on the IMPORTANT BUT NOT URGENT ones and the others are more or less NOT IMPORTANT.&lt;/p&gt;
+
+&lt;p&gt;The matrix is a really good tool and I encourage you to use it. Now let’s see at the special version for Software Developers.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-eisenhower-matrix-for-software-development&quot;&gt;The Eisenhower Matrix (for Software Development)&lt;/h2&gt;
+
+&lt;p&gt;The original matrix can be adapted to software development and SAAS applications like this:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-03-26-EisenhowerMatrix/EisenhowerSoftware.drawio.svg&quot; alt=&quot;Eisenhower Matrix&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Now the question it: Is it really good to always do the IMPORTANT AND URGENT things because the matrix says so? Do you really always want to work in the RED Zone?&lt;/p&gt;
+
+&lt;p&gt;Although the matrix advices you how to set your priorities this does not mean, that you should follow the Matrix blindly.&lt;/p&gt;
+
+&lt;p&gt;Of course it is NOT a good idea to always work in the URGENT/IMPORTANT quadrant. You can imagine, that always living in the DANGER-Zone leads to high stress levels and high stress levels cannot be maintained for a long period. Now here comes the thing. Software Development is a “Infinite Game” where the Players need to delivery straight and steady instead of a quick win.&lt;/p&gt;
+
+&lt;p&gt;So even if you have to go for IMPORTANT/URGENT issues first (Bugs etc.), you want to have a plan to stay out that quadrant and work in the IMPORTANT but NOT URGENT zone. You want to have time to think things through, plan them accordingly and executed them correctly. No rushing things.&lt;/p&gt;
+</description>
+        <pubDate>Fri, 26 Mar 2021 00:00:00 +0100</pubDate>
+        <link>http://localhost:4000/TheEisenhowerMatrix</link>
+        <guid isPermaLink="true">http://localhost:4000/TheEisenhowerMatrix</guid>
+        
+        
+        <category>management</category>
+        
+        <category>leadership</category>
+        
+        <category>coding</category>
+        
+      </item>
+    
+      <item>
+        <title>NEMA 8 vs. NEMA 11 Comparison</title>
+        <description>&lt;p&gt;I needed a strong stepper motor for one of my projects so I started a little comparison of NEMA Motors.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;To drive a NEMA stepper, you need:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/3rWgJpy&quot;&gt;NEMA 8&lt;/a&gt; and or &lt;a href=&quot;https://amzn.to/3csokFZ&quot;&gt;NEMA 11&lt;/a&gt; Stepper Motor&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/2OkORxa&quot;&gt;Arduino Nano with USB Cable&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/38B3nYn&quot;&gt;A4988 driver board&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/3ldfuzP&quot;&gt;Breakout board&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/3ckzJre&quot;&gt;Jumper cables&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/38C5Gu9&quot;&gt;Nylon Rope&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://amzn.to/3tgF5dY&quot;&gt;Laboratory Power Supply&lt;/a&gt; or &lt;a href=&quot;https://amzn.to/30DG1ga&quot;&gt;6V Battery Case&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;A 3D Printer (If you want to print a winch)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;winch-3d-printed&quot;&gt;Winch (3D Printed)&lt;/h2&gt;
+
+&lt;p&gt;To test the torque I needed a Winch and I decided to use &lt;a href=&quot;https://www.tinkercad.com/&quot;&gt;Tinkercad&lt;/a&gt; to draw some. Tinkercad is quite easy to use and I recommend it for beginners. It has everything needed to make lots of projects and it’s free.&lt;/p&gt;
+
+&lt;p&gt;For the NEMA 11 I had some issues with the overhang so I created a special version which can be printed in two pieces and then glued together.&lt;/p&gt;
+
+&lt;p&gt;You can download the winch from Thingiverse: &lt;a href=&quot;https://www.thingiverse.com/thing:4792611/files&quot;&gt;Winch for Nema 11&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/Nema11Winch1Small.jpg&quot; alt=&quot;Winch&quot; /&gt;
+&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/Nema11Winch2Small.jpg&quot; alt=&quot;Winch&quot; /&gt;
+&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/Nema11Winch3Small.jpg&quot; alt=&quot;Winch&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;schematic-view&quot;&gt;Schematic View&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/schema.svg&quot; alt=&quot;Schematic View&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;bread-board&quot;&gt;Bread Board&lt;/h2&gt;
+
+&lt;p&gt;This is how to set things up on a bread board.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/breadboard.png&quot; alt=&quot;BreadBoard&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;the-arduino-code&quot;&gt;The Arduino Code&lt;/h2&gt;
+
+&lt;p&gt;This is a pretty simple version of the code which run the motors in both directions. Just copy this to your Arduino IDE, select the correct Arduino board and upload it. Be careful, the motors will start right after upload.&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;steps&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;setup&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+   &lt;span class=&quot;n&quot;&gt;pinMode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OUTPUT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// enable&lt;/span&gt;
+   &lt;span class=&quot;n&quot;&gt;pinMode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OUTPUT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// step&lt;/span&gt;
+   &lt;span class=&quot;n&quot;&gt;pinMode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OUTPUT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// direction&lt;/span&gt;
+   &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LOW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;loop&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+   &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;HIGH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// clockwise&lt;/span&gt;
+   &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;steps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;HIGH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;delayMicroseconds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LOW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;delayMicroseconds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+   &lt;span class=&quot;n&quot;&gt;delay&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+   &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LOW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// counterclockwise&lt;/span&gt;
+   
+   &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;steps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stepCounter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;HIGH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;delayMicroseconds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;digitalWrite&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LOW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;delayMicroseconds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+   &lt;span class=&quot;n&quot;&gt;delay&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;assembly&quot;&gt;Assembly&lt;/h2&gt;
+
+&lt;p&gt;First mount the winch on to the motor. You may need some filing and pushing to get it onto the shaft.&lt;/p&gt;
+
+&lt;p&gt;Then get your breadboard and some cables and put everything together like in the breadboard picture above.&lt;/p&gt;
+
+&lt;p&gt;Then connect your Arduino with your computer and upload the code.&lt;/p&gt;
+
+&lt;p&gt;Once uploaded, connect the main power source to the motor and it should immediately start spinning. If not head over to the FAQ below.&lt;/p&gt;
+
+&lt;p&gt;This is how it looks like in my setup&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/Setup.jpg&quot; alt=&quot;Winch Animation&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;results&quot;&gt;Results&lt;/h2&gt;
+
+&lt;p&gt;Here you can see a little video of my test setup. It does not look professional but it does the job for me.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/2021-02-25-NemaStepperMotors/WinchAnimation.gif&quot; alt=&quot;Winch Animation&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;With this setup I figured that the NEMA 8 was able to pull around 200 grams, whereas the NEMA was able to hold up to 700 grams.&lt;/p&gt;
+
+&lt;h2 id=&quot;faq&quot;&gt;FAQ&lt;/h2&gt;
+
+&lt;h3 id=&quot;the-stepper-motor-is-just-making-sounds-but-is-not-moving&quot;&gt;The stepper motor is just making sounds, but is not moving&lt;/h3&gt;
+
+&lt;p&gt;In my experiments this happens when the motor does not have enough power (voltage). I first tried to use a converter which creates 5V out off the USB port, but this was not enough current to power the motor. So please use an external power supply or battery pack to drive the motor.&lt;/p&gt;
+
+&lt;h3 id=&quot;what-is-28byj-48&quot;&gt;What is 28BYJ-48?&lt;/h3&gt;
+
+&lt;p&gt;This is a very cheap stepper motor (see &lt;a href=&quot;https://amzn.to/3bENSk1&quot;&gt;here&lt;/a&gt;). Because of its low price it is used a lot in IoT projects. The downside of the motor is, that it does not have a lot of torque&lt;/p&gt;
+
+&lt;p&gt;28BYJ-48 35 mm x 30 mm, 0,034 Nm -&amp;gt; That means around 200 grams&lt;/p&gt;
+
+&lt;h3 id=&quot;what-is-nema&quot;&gt;What is NEMA?&lt;/h3&gt;
+
+&lt;p&gt;NEMA (National Electrical Manufacturers Association) is a group that has standardized the motors (and their torque). They still come in different length so, so watch out:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;NEMA 08, 20 mm × 20 mm, 0,036 Nm&lt;/li&gt;
+  &lt;li&gt;NEMA 11, 28 mm × 28 mm, 0,1 Nm&lt;/li&gt;
+  &lt;li&gt;NEMA 14, 35 mm × 35 mm, 0,3 Nm&lt;/li&gt;
+  &lt;li&gt;NEMA 17, 42 mm × 42 mm, 0,5 Nm&lt;/li&gt;
+  &lt;li&gt;NEMA 23, 56 mm × 56 mm, 2,0 – 4,0 Nm&lt;/li&gt;
+  &lt;li&gt;NEMA 34, 86 mm × 86 mm, 4,5 – 8,0 Nm&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;please-support-me&quot;&gt;Please support me&lt;/h2&gt;
+
+&lt;p&gt;If you want to help me writing more blog posts please use the affiliate links above to buy stuff. You can also donate a little amount using the link below or (or scan the QR Code).&lt;/p&gt;
+
+&lt;p&gt;Thanks a million times!&lt;/p&gt;
+
+&lt;form action=&quot;https://www.paypal.com/donate&quot; method=&quot;post&quot; target=&quot;_top&quot;&gt;
+&lt;input type=&quot;hidden&quot; name=&quot;hosted_button_id&quot; value=&quot;RT2TB3FZGGFMQ&quot; /&gt;
+&lt;input type=&quot;image&quot; src=&quot;https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif&quot; border=&quot;0&quot; name=&quot;submit&quot; title=&quot;PayPal - The safer, easier way to pay online!&quot; alt=&quot;Donate with PayPal button&quot; /&gt;
+&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;https://www.paypal.com/en_DE/i/scr/pixel.gif&quot; width=&quot;1&quot; height=&quot;1&quot; /&gt;
+&lt;/form&gt;
+
+&lt;p&gt;QR Code:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/Donation.png&quot; alt=&quot;Donation&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Fri, 26 Mar 2021 00:00:00 +0100</pubDate>
+        <link>http://localhost:4000/NemaStepperMotors</link>
+        <guid isPermaLink="true">http://localhost:4000/NemaStepperMotors</guid>
+        
+        
+        <category>iot</category>
+        
+        <category>coding</category>
+        
+      </item>
+    
+  </channel>
+</rss>

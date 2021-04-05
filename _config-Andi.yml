@@ -1,0 +1,28 @@
+remote_theme: wowthemesnet/mediumish-theme-jekyll/
+title: Notes to myself 👩‍💻👨‍💻🧑‍💻
+description: I see what needs to be done, and then I do it
+
+# Plugins
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-archives
+    
+# Archives
+jekyll-archives:
+  enabled:
+    - categories
+  layout: archive
+  permalinks:
+    category: '/category/:name/'
+
+# Other
+markdown: kramdown
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+   
+exclude: [changelog.md, LICENSE.txt, README.md, Gemfile, Gemfile.lock]

@@ -1,13 +1,17 @@
 ---
-layout: post
-title:  "Important, but not urgent. The Eisenhower Matrix for Software Development!"
-author: Andreas Rudischhauser
-categories: [ Leadership, TimeManagement, Development ]
-image: /assets/2021-02-25-NemaStepperMotors/header.jpg
-description: "Important, but not urgent. The Eisenhower Matrix for Software Development!"
+layout: post-sidebar
+date: 2021-03-26
+title: "Important, but not urgent. The Eisenhower Matrix for Software Development!"
+categories: management leadership coding 
+author_name : Andi
+author_url : /author/andi
+author_avatar: andi
+show_avatar : true
+read_time : 22
+feature_image: feature-water
+show_related_posts: true
+square_related: recommend-spain
 ---
-
-# Important, but not urgent! The Eisenhower Matrix for Software Development!
 
 I don't remember exactly when I first heard about the Eisenhower Matrix but since then I've found it more and more useful to structure my (work) life. It really helps to prioritize what to do next if you have a lot of tasks.
 

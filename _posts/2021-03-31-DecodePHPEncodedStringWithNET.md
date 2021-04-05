@@ -1,14 +1,19 @@
 ---
-layout: post
-title:  "Decrypt a PHP encrypted text with .NET Core"
-author: "Andreas Rudischhauser"
-categories: [ Development, .NET Core]
-image: 
-description: "Decrypt a PHP encrypted text with .NET Core"
+layout: post-sidebar
+date: 2021-03-31
+title: "Decrypt PHP encrypted strings with .net core"
+categories: coding
+author_name : Andi
+author_url : /author/andi
+author_avatar: andi
+show_avatar : true
+read_time : 22
+feature_image: feature-water
+show_related_posts: true
+square_related: recommend-spain
 ---
-# Decrypt a PHP encrypted text with .NET Core
 
-I put this here, because it wasn't trivial to figure out the exact code
+I once needed to decrypt a php encoded string and it turned out to be more complex than anticipated. This is just a gist.
 
 ## PHP Encryptions
 

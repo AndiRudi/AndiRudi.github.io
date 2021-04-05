@@ -1,17 +1,19 @@
 ---
-layout: post
-title:  "NEMA 8 vs. NEMA 11 Comparison"
-author: Andreas Rudischhauser
-categories: [ IoT, Stepper ]
-image: /assets/2021-02-25-NemaStepperMotors/header.jpg
-description: "Nema Stepper Motor with Arduino and A4988 Driver"
+layout: post-sidebar
+date: 2021-03-26
+title: "NEMA 8 vs. NEMA 11 Comparison"
+categories: iot coding
+author_name : Andi
+author_url : /author/andi
+author_avatar: andi
+show_avatar : true
+read_time : 22
+feature_image: feature-water
+show_related_posts: true
+square_related: recommend-spain
 ---
 
-# Nema Stepper Motor with Arduino and A4988 Driver
-
-For one of my next projects I wanted to use the 28BYJ-48 Stepper motor, but while trying out, I came to realize that this motor does not have enough torque for the project.
-
-This was the time when I figured there are a bunch of other stepper motors, called the NEMA Motors. They come in different sizes and shapes and I just bought a NEMA 8 and a NEMA 11 motor to compare them.
+I needed a strong stepper motor for one of my projects so I started a little comparison of NEMA Motors.
 
 **To drive a NEMA stepper, you need:**
 

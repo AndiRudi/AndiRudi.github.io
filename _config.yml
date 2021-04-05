@@ -1,28 +1,24 @@
-remote_theme: wowthemesnet/mediumish-theme-jekyll/
-title: Notes to myself 👩‍💻👨‍💻🧑‍💻
-description: I see what needs to be done, and then I do it
+# Site settings
+title: Writer Theme
+email: andreas@rudischhauser.de
+description: > # Writer Theme is a responsive template
+ focussed on typography, minimal design and
+  quality photography built using the Jekyll platform.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "" # the base hostname & protocol for your site
+enable_retina: false
+permalink: :title
+nav_list:
+  Home : ['Home', '/', 'fa-home']
+  About me : ['About me', '/author/andi', 'fa-user']
+  Contact : ['Contact', '/contact', 'fa-plane']
+single_footer: '<p>The writer community loves your content. Writer &copy; 2016 <a href="/">latest posts</a></p>'
+footer_links:
+    About me : ['About me', '/author/andi', 'fa-user']
+    Contact : ['Contact', '/contact', 'fa-plane']
 
-# Plugins
-plugins:
-  - jekyll-paginate
-  - jekyll-sitemap
-  - jekyll-feed
-  - jekyll-seo-tag
-  - jekyll-archives
-    
-# Archives
-jekyll-archives:
-  enabled:
-    - categories
-  layout: archive
-  permalinks:
-    category: '/category/:name/'
 
-# Other
-markdown: kramdown
-
+# Build settings
 kramdown:
   input: GFM
   syntax_highlighter: rouge
-   
-exclude: [changelog.md, LICENSE.txt, README.md, Gemfile, Gemfile.lock]
