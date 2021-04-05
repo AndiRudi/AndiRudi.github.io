@@ -6,7 +6,6 @@ categories: [ Development, .NET Core]
 image: 
 description: "Decrypt a PHP encrypted text with .NET Core"
 ---
-
 # Decrypt a PHP encrypted text with .NET Core
 
 I put this here, because it wasn't trivial to figure out the exact code
