@@ -61,7 +61,7 @@ The idea of this pattern is, that in your local service you have a outbox queue 
 
 There are different ways how you can model the outbox pattern. Whatever pattern you choose, you need to make sure, that both actions (saving locally and adding to the outbox) are handled in one transaction. One pattern is to use hangfire (a background processing library) to deal with this. That means with saving your your local record, you also put a task to send it to another system to Hangfire, which will deal with that later.
 
-```csharp
+```cs
 public void AddCustomer(Customer customer) {
 
     using (var transaction = new TransactionScope())
