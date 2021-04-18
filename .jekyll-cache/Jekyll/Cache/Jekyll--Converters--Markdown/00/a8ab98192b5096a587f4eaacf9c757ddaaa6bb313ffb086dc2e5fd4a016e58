@@ -1,0 +1,178 @@
+I"�<<p>The Inbox and Outbox Patterns are a good way to make sure data flows reliably between services. Let’s have a deep look how it works.</p>
+
+<p>To get started have a look at this simple scenario without any inbox and outbox patterns applied:</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/Without.drawio.svg" alt="Without Inbox" /></p>
+
+<p>The above scenario is using a direct (or synchronous) connection to the other service. If we want to use messages the scenario would look a bit different:</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/WithQueue.drawio.svg" alt="With Queue" /></p>
+
+<p>But also this example can be broken down to the synchronous pattern above because the first call to the RabbitMQ is still synchronous.</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/WithQueue2.drawio.svg" alt="With Queue 2" /></p>
+
+<p>The following snippet is a typical example of this scenario. We first save a customer in the local system and then we send a message to another system.</p>
+
+<p>In the end this means, whatever we do, there will be a synchronous call from our service to another system. Now let’s have a look how we would send data to this system.</p>
+
+<p>In the following example, we are saving a customer in our service and then we want to send it to another system (using RabbitMQ). That means, after saving the local customer, we would send it like this:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">void</span> <span class="nf">AddCustomer</span><span class="p">(</span><span class="n">Customer</span> <span class="n">customer</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="n">_context</span><span class="p">.</span><span class="n">Customers</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">customer</span><span class="p">);</span>
+    <span class="n">_context</span><span class="p">.</span><span class="nf">SaveChanges</span><span class="p">();</span>
+
+    <span class="c1">//At this point the record is saved to the local system and now</span>
+    <span class="c1">//we want to send the record to other systems using the rabbit mq</span>
+
+    <span class="n">RabbitMQ</span><span class="p">.</span><span class="nf">Send</span><span class="p">(</span><span class="n">customer</span><span class="p">.</span><span class="nf">ToMessage</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Can you see the issue with this code?</strong></p>
+
+<p>Let’s think for a moment that RabbitMQ cannot receive the message (network issue, to much data, etc.). With the current code, the record would be saved to the local services database, but sending it to queue will fail and there is no way the lost information can be recovered. Therefore we will have different information on the local system and all other systems.</p>
+
+<p>This is where the Outbox Pattern can help.</p>
+
+<h2 id="the-outbox-pattern-how-does-it-work">The Outbox Pattern: How does it work?</h2>
+
+<p>The idea of this pattern is, that in your local service you have a outbox queue to handle outgoing data. Think of it like a email application with outboxes.</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/Outbox.drawio.svg" alt="Outbox" /></p>
+
+<p>There are different ways how you can model the outbox pattern. Whatever pattern you choose, you need to make sure, that both actions (saving locally and adding to the outbox) are handled in one transaction. One pattern is to use hangfire (a background processing library) to deal with this. That means with saving your your local record, you also put a task to send it to another system to Hangfire, which will deal with that later.</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">void</span> <span class="nf">AddCustomer</span><span class="p">(</span><span class="n">Customer</span> <span class="n">customer</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">transaction</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">TransactionScope</span><span class="p">())</span>
+    <span class="p">{</span>
+        <span class="n">_context</span><span class="p">.</span><span class="n">Customers</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">customer</span><span class="p">);</span>
+
+        <span class="kt">var</span> <span class="n">outboxMessage</span> <span class="p">=</span> <span class="n">customer</span><span class="p">.</span><span class="nf">ToMessage</span><span class="p">()</span>
+        <span class="n">_context</span><span class="p">.</span><span class="n">OutboxMessages</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">outboxMessage</span><span class="p">);</span>
+
+        <span class="n">_context</span><span class="p">.</span><span class="nf">SaveChanges</span><span class="p">();</span>
+        
+        <span class="n">Hangfire</span><span class="p">.</span><span class="n">BackgroundJob</span><span class="p">.</span><span class="n">Enqueue</span><span class="p">&lt;</span><span class="n">Outbox</span><span class="p">&gt;(</span><span class="n">o</span> <span class="p">=&gt;</span> <span class="n">o</span><span class="p">.</span><span class="nf">Process</span><span class="p">(</span><span class="n">outboxMessage</span><span class="p">.</span><span class="n">Id</span><span class="p">));</span>
+
+        <span class="n">transaction</span><span class="p">.</span><span class="nf">Complete</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">...</span> <span class="k">in</span> <span class="n">Outbox</span><span class="p">.</span><span class="n">cs</span>
+
+<span class="k">public</span> <span class="k">void</span> <span class="nf">Process</span><span class="p">(</span><span class="n">Guid</span> <span class="n">messageId</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kt">var</span> <span class="n">message</span> <span class="p">=</span> <span class="n">_context</span><span class="p">.</span><span class="n">OutboxMessages</span><span class="p">.</span><span class="nf">Find</span><span class="p">(</span><span class="n">messageId</span><span class="p">);</span>
+    <span class="n">RabbitMQ</span><span class="p">.</span><span class="nf">Send</span><span class="p">(</span><span class="n">customer</span><span class="p">);</span>
+
+    <span class="n">message</span><span class="p">.</span><span class="n">Processed</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">;</span>
+    <span class="n">_context</span><span class="p">.</span><span class="nf">SaveChanges</span><span class="p">();</span>
+
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>But what if the messages in the Outbox are not sent?</strong></p>
+
+<p>This is exactly the reason we have this box. If the other service is not available, the outbox will store all outgoing messages until the error is resolved.</p>
+
+<p>The trick is, that we have separated the problems. As a developer you will have some time to fix the issue, while your local service is still working. If you won’t have the outbox, then your local service would be erroring as well.</p>
+
+<h2 id="the-inbox-pattern-how-does-it-work">The Inbox Pattern: How does it work?</h2>
+
+<p>The Inbox Pattern is similar to the Outbox Pattern. The first step is to get the message from the external system and store it. The second step is to loop through the inbox (in order) and process the messages.</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/Inbox.drawio.svg" alt="Inbox" /></p>
+
+<p>Here is some pseudo code how this could look like using Hangfire as an Inbox.</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">public</span> <span class="k">void</span> <span class="nf">QueueReceiver</span><span class="p">(</span><span class="n">Data</span> <span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">transaction</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">TransactionScope</span><span class="p">())</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">inboxMessage</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Inbox</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+        <span class="n">_context</span><span class="p">.</span><span class="n">InboxMessages</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">inboxMessage</span><span class="p">);</span>
+        <span class="n">_context</span><span class="p">.</span><span class="nf">SaveChanges</span><span class="p">();</span>
+       
+        <span class="n">data</span><span class="p">.</span><span class="nf">Ack</span><span class="p">();</span>
+        <span class="n">transaction</span><span class="p">.</span><span class="nf">Complete</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">...</span> <span class="k">in</span> <span class="n">Inbox</span><span class="p">.</span><span class="n">cs</span>
+
+<span class="k">public</span> <span class="k">void</span> <span class="nf">Run</span><span class="p">(</span><span class="n">Guid</span> <span class="n">messageId</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kt">var</span> <span class="n">message</span> <span class="p">=</span> <span class="n">_context</span><span class="p">.</span><span class="n">inboxMessages</span><span class="p">.</span><span class="nf">Find</span><span class="p">(</span><span class="n">messageId</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">message</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="s">"Customer"</span><span class="p">)</span> 
+    <span class="p">{</span>
+        <span class="c1">//Here we do something with the received data</span>
+        <span class="n">_context</span><span class="p">.</span><span class="n">Customers</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">customer</span><span class="p">.</span><span class="nf">FromMessage</span><span class="p">(</span><span class="n">message</span><span class="p">));</span>
+        <span class="n">_context</span><span class="p">.</span><span class="nf">SaveChanges</span><span class="p">();</span>
+    <span class="p">}</span>
+   
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>In this case we make sure, that when we receive the message from the queue, we save it to the local database, add a task to process it and acknowledge the message to the queue in one transaction transaction.</p>
+
+<p>The second step is then to process the received data later.</p>
+
+<h2 id="full-picture">Full picture</h2>
+
+<p>If your service receives data from other services and also sends data to other services, you will probably have an inbox and an outbox. Just to finish this article here the full picture how this looks like.</p>
+
+<p><img src="/assets/2021-04-05-InboxOutboxPattern/Fullpicture.drawio.svg" alt="Inbox" /></p>
+
+<h2 id="complete-example">Complete Example</h2>
+
+<p>While writing this article I realized, that I want to have a fully working example. So I wrote a <a href="https://github.com/AndiRudi/InboxOutboxPattern">console application</a> to support the article. I didn’t want to use RabbitMQ so I wrote a fake MessageQueue and using Hangfire was also quite tricky so it is not really used, but simulated.</p>
+
+<h2 id="known-issues">Known issues</h2>
+
+<h3 id="do-not-use-in-memory-store-as-inboxoutbox">Do not use In-Memory Store as Inbox/Outbox</h3>
+
+<p>An in memory store like Redis used as a backing store can be problematic. You usually don’t want to loose the outbox under all circumstances. But if you use Redis and some is flushing the cache you will. So make sure that you always have your inbox/outbox stored to disk.</p>
+
+<h3 id="process-the-inboxoutbox-in-order">Process the inbox/outbox in order</h3>
+
+<p>For Inbox: Make sure that you process items in the order they came in (FIFO), otherwise you may mixing up and overwriting data. If the incoming message has a unique key attached use it make sure your not processing it twice. If there is a timestamp use that to order the messages.</p>
+
+<p>For Outbox: Always add a timestamp and unique key to your messages to ensure the receiver can also check for order and duplicates easily.</p>
+
+<h3 id="be-careful-about-multiple-workers">Be careful about multiple workers</h3>
+
+<p>If you use background workers like Hangfire to process your outbox, you may want to parallelize the work to speed up the process. Although you can do this, you still need to ensure the order. You may introduce a AggregateId or PartitionId to make sure, that even when you have multiple workers, each worker only always works on a (by AggregateId or PartitionId) - ordered list of all messages.</p>
+
+<p>https://medium.com/incognia-tech/ensuring-data-consistency-across-services-with-the-transactional-outbox-pattern-90be4d735cb0</p>
+
+<h2 id="faq">FAQ</h2>
+
+<h3 id="is-there-another-possible-option-instead-of-a-recurring-task-polling-for-changes">Is there another possible option instead of a recurring task polling for changes?</h3>
+
+<p>Multiple databases have triggers than can be used to start a worker once new data is incoming.</p>
+
+<h3 id="what-about-distributed-transactions">What about Distributed Transactions?</h3>
+
+<p>Distributed transactions are another way how to ensure transactional safety between two systems. It is usually more complicated. There have been many systems (and there still are) that make use of distributed transactions (see <a href="https://en.wikipedia.org/wiki/Two-phase_commit_protocol">Two Phase Commit Protocol</a>).</p>
+
+<p>The Inbox/Outbox Pattern is an alternative and easier way. Instead of taking care of the whole transaction over all systems, the pattern only uses transactions inside each service to do internal work and then put the message into the outbox. The status of the whole process has to be part of the message itself. Each system retrieves the message and continues with it’s work and eventually creates new messages delivered to other systems.</p>
+
+<h2 id="links-and-resources">Links and Resources</h2>
+
+<p>https://event-driven.io/en/outbox_inbox_patterns_and_delivery_guarantees_explained/</p>
+
+<p>https://github.com/oskardudycz/PostgresOutboxPatternWithCDC.NET
+https://github.com/oskardudycz/EventSourcing.NetCore#104-event-processing
+http://www.kamilgrzybek.com/design/the-outbox-pattern/</p>
+
+<p>Inbox &amp; Outbox pattern - transactional message processing [Microservices .NET]
+https://www.youtube.com/watch?v=ebyR5RPKciw</p>
+
+<p>Reliably Save State &amp; Publish Events (Outbox Pattern)
+https://www.youtube.com/watch?v=u8fOnxAxKHk</p>
+
+:ET

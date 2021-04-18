@@ -91,15 +91,33 @@ void loop()
 }
 ```
 
-## Assembly
+## Assemble driver and adjust current
 
-First mount the winch on to the motor. You may need some filing and pushing to get it onto the shaft.
+Fet your breadboard, some cables and the chips and put everything together like in the breadboard picture above. Then connect the arduino to your computer and the main power source. You do not need to connect the motor yet.
 
-Then get your breadboard and some cables and put everything together like in the breadboard picture above.
+The A4988 driver has a mini potentiometer to setup the current. It is important to set the current otherwise the stepper motors might get hot (and event get damaged).
 
-Then connect your Arduino with your computer and upload the code.
+To calculate the current we can use this formula:
 
-Once uploaded, connect the main power source to the motor and it should immediately start spinning. If not head over to the FAQ below.
+```math
+Vref = Imot x 8 x Rsen
+```
+
+`Imot` is the motor current (NEMA 11 is at 0,67A) and `Rsen` is the Resistor next to the potentiometer is usually 0,068 Ohm ([more information](https://www.pololu.com/product/1182#:~:text=The%20A4988%20driver%20IC%20has,can%20keep%20the%20IC%20cool.)). This leads us to the following calculation:
+
+```math
+Vref = 0.67 x 8 x 0.068 = 0,36V
+```
+
+We can easily measure the reference voltage using a multimeter between GND and the Potentiometer itself. You can also connect the red wire of your potentiometer to the screw driver which makes it easier to setup the correct voltage.
+
+The motor should not be connected while doing this.
+
+## Final Assembly
+
+First mount the winch on to the motor. You may need some filing and pushing to get it onto the shaft. Then connect the motor as in the pictures. Finally connect your Arduino with your computer and upload the code. 
+
+Once uploaded, the motors should immediately start spinning. If not head over to the FAQ below.
 
 This is how it looks like in my setup
 

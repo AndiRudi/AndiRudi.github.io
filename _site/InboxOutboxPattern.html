@@ -110,7 +110,7 @@
 
 <p>There are different ways how you can model the outbox pattern. Whatever pattern you choose, you need to make sure, that both actions (saving locally and adding to the outbox) are handled in one transaction. One pattern is to use hangfire (a background processing library) to deal with this. That means with saving your your local record, you also put a task to send it to another system to Hangfire, which will deal with that later.</p>
 
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">void</span> <span class="nf">AddCustomer</span><span class="p">(</span><span class="n">Customer</span> <span class="n">customer</span><span class="p">)</span> <span class="p">{</span>
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">void</span> <span class="nf">AddCustomer</span><span class="p">(</span><span class="n">Customer</span> <span class="n">customer</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">transaction</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">TransactionScope</span><span class="p">())</span>
     <span class="p">{</span>
