@@ -194,8 +194,8 @@ static void adjustSpoolDiameter(float diameter1,float diameter2) {
   float MAX_VEL2 = MAX_STEPS_S * THREADPERSTEP2;  // cm/s
   MAX_VEL = MAX_VEL1 > MAX_VEL2 ? MAX_VEL1 : MAX_VEL2;
 
-  // Serial.print(F("SpoolDiameter1 = "); Serial.println(F(SPOOL_DIAMETER1,3));
-  // Serial.print(F("SpoolDiameter2 = "); Serial.println(F(SPOOL_DIAMETER2,3));
+  Serial.print(F("SpoolDiameter1 = ")); Serial.println(SPOOL_DIAMETER1);
+  Serial.print(F("SpoolDiameter2 = ")); Serial.println(SPOOL_DIAMETER2);
 }
 
 
@@ -720,7 +720,6 @@ static int processSubcommand() {
   return found;
 }
 
-
 //------------------------------------------------------------------------------
 static void processCommand() {
   // blank lines
@@ -731,6 +730,14 @@ static void processCommand() {
   } else if(!strncmp(buffer,"UID",3)) {
     robot_uid=atoi(strchr(buffer,' ')+1);
     SaveUID();
+  } else if(!strncmp(buffer,"U", 1)) {
+     line_safe(posx-10,posy,posz);
+  } else if(!strncmp(buffer,"D", 1)) {
+     line_safe(posx+10,posy,posz);
+  } else if(!strncmp(buffer,"L", 1)) {
+     line_safe(posx,posy-10,posz);
+  } else if(!strncmp(buffer,"R", 1)) {
+     line_safe(posx,posy+10,posz);
   } else if(!strncmp(buffer,"G28",3)) {
     FindHome();
   } else if(!strncmp(buffer,"TELEPORT",8)) {
@@ -989,6 +996,8 @@ void setup() {
 
   m1.setSpeed((int)MAX_RPM);
   m2.setSpeed((int)MAX_RPM);
+  Serial.print(F("Speed: " ));
+  Serial.println((int)MAX_RPM);
   
   Serial.print(F("> "));
 }

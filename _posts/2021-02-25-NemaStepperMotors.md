@@ -103,7 +103,7 @@ To calculate the current we can use this formula:
 Vref = Imot x 8 x Rsen
 ```
 
-`Imot` is the motor current (NEMA 11 is at 0,67A) and `Rsen` is the Resistor next to the potentiometer is usually 0,068 Ohm ([more information](https://www.pololu.com/product/1182#:~:text=The%20A4988%20driver%20IC%20has,can%20keep%20the%20IC%20cool.)). This leads us to the following calculation:
+`Imot` is the motors current (NEMA 11 is at 0,67A) and `Rsen` is the Resistor next to the potentiometer is usually 0,068 Ohm ([more information](https://www.pololu.com/product/1182#:~:text=The%20A4988%20driver%20IC%20has,can%20keep%20the%20IC%20cool.)). This leads us to the following calculation:
 
 ```math
 Vref = 0.67 x 8 x 0.068 = 0,36V
